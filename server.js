@@ -1,19 +1,36 @@
-const express = require('express')
-const app = express()
+const express = require('express');
 const bodyParser = require('body-parser');
+const request = require('request');
+const app = express();
+
+let apiKey = 'd2f498f92de957b1e2f1b4ae45e2eee5';
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.set('view.engine', 'ejs')
+app.set('view.engine', 'ejs');
 
 app.get('/', function (req, res) {
   //res.send('Hello World!')
-  res.render('index.ejs')
+  res.render('index.pug', {weather: null, error: null});
 })
+
 app.post('/', function (req, res) {
-  //res.send('Hello World!')
-  res.render('index.ejs')
-  console.log(req.body.city);
+  let city = req.body.city;
+  let url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${apiKey}`;
+
+  request(url, function (err, repsonse, body) {
+    if(err){
+      res.render('index.pug', {weather: null, error: 'Error, please try again'});
+    } else {
+      let weather = JSON.parse(body)
+      if(weather.main == undefined){
+        res.render('index.pug', {weather: null, error: 'Error, please try again'});
+      } else{
+        let weatherText = `It's ${weather.main.temp} degrees in ${weather.name}!`;
+        res.render('index.pug', {weather: weatherText, error: null});
+      }
+    }
+  });
 })
 
 app.listen(4300, function () {
